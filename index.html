@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hotdog League — Standings</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌭</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+<style>
+  :root {
+    --bg: #FAF3E7;
+    --surface: #FFFFFF;
+    --ink: #2B1B12;
+    --mustard: #E8A93B;
+    --chili: #C1442E;
+    --muted: #8A7A66;
+    --line: #E4D9C5;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 40px 20px 80px;
+  }
+
+  header {
+    margin-bottom: 32px;
+  }
+
+  h1 {
+    font-family: 'Archivo Black', sans-serif;
+    font-weight: 400;
+    font-size: clamp(2rem, 8vw, 2.75rem);
+    line-height: 1;
+    margin: 0 0 6px;
+    letter-spacing: -0.01em;
+  }
+
+  h1 span { color: var(--chili); }
+
+  .subtitle {
+    color: var(--muted);
+    font-size: 0.95rem;
+    margin: 0;
+  }
+
+  .meta-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+  }
+
+  .meta-row span { color: var(--muted); font-size: 0.85rem; }
+
+  #refresh-btn {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    font-size: 0.85rem;
+    padding: 6px 14px;
+    border-radius: 100px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+
+  #refresh-btn:hover { border-color: var(--chili); background: var(--surface); }
+  #refresh-btn:active { transform: scale(0.97); }
+
+  section { margin-top: 36px; }
+
+  h2 {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--muted);
+    margin: 0 0 12px;
+  }
+
+  /* Leaderboard */
+  .board-row {
+    display: grid;
+    grid-template-columns: 34px 1fr auto;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--line);
+  }
+
+  .board-row:first-child { border-top: 1px solid var(--line); }
+
+  .rank {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1.5px solid var(--line);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .board-row.top .rank {
+    background: var(--mustard);
+    border-color: var(--mustard);
+    color: var(--ink);
+  }
+
+  .name { font-weight: 500; font-size: 1.02rem; }
+
+  .board-row.top .name { font-weight: 700; }
+
+  .score {
+    font-family: 'Archivo Black', sans-serif;
+    font-weight: 400;
+    font-size: 1.2rem;
+    color: var(--chili);
+  }
+
+  /* Stats table */
+  .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    min-width: 560px;
+  }
+
+  th, td {
+    text-align: left;
+    padding: 10px 14px;
+    white-space: nowrap;
+  }
+
+  thead th {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.78rem;
+    border-bottom: 1px solid var(--line);
+  }
+
+  tbody tr:not(:last-child) td { border-bottom: 1px solid var(--line); }
+
+  td.num, th.num { text-align: right; }
+
+  .profit-yes { color: #3F7D4F; font-weight: 600; }
+  .profit-no { color: var(--chili); font-weight: 600; }
+  .profit-na { color: var(--muted); }
+
+  /* States */
+  .state-box {
+    padding: 28px 20px;
+    text-align: center;
+    color: var(--muted);
+    border: 1px dashed var(--line);
+    border-radius: 10px;
+    font-size: 0.92rem;
+    line-height: 1.5;
+  }
+
+  .state-box code {
+    display: block;
+    margin-top: 10px;
+    font-size: 0.78rem;
+    background: var(--surface);
+    padding: 8px 10px;
+    border-radius: 6px;
+    word-break: break-all;
+    color: var(--ink);
+  }
+
+  footer {
+    margin-top: 48px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 0.78rem;
+  }
+
+  @media (max-width: 420px) {
+    .board-row { grid-template-columns: 28px 1fr auto; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <h1>Hotdog <span>League</span></h1>
+      <p class="subtitle">2026 season — live standings</p>
+      <div class="meta-row">
+        <span id="status-text">Loading…</span>
+        <button id="refresh-btn">Refresh</button>
+      </div>
+    </header>
+
+    <section>
+      <h2>Leaderboard</h2>
+      <div id="leaderboard"></div>
+    </section>
+
+    <section>
+      <h2>Full stats</h2>
+      <div class="table-scroll">
+        <table id="stats-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th class="num">Score</th>
+              <th class="num">Weeks</th>
+              <th class="num">Win %</th>
+              <th class="num">Profit</th>
+              <th>Profitable?</th>
+            </tr>
+          </thead>
+          <tbody id="stats-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <footer>Pulls live from the league spreadsheet. Reload this page any time to see the latest scores.</footer>
+  </div>
+
+<script>
+  // ---- CONFIG ----
+  // Paste your "Publish to web" CSV link for the Public tab here:
+  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWsP99gn0o2jdtJgKc-Hpt4kMCjmVQmkm3s4o9CU6F5NqdzxtwUyTuf9Noi9ismMyNrhbNXncvs6Ma/pub?gid=2112926375&single=true&output=csv";
+  // ----------------
+
+  const leaderboardEl = document.getElementById('leaderboard');
+  const statsBodyEl = document.getElementById('stats-body');
+  const statusEl = document.getElementById('status-text');
+  const refreshBtn = document.getElementById('refresh-btn');
+
+  function showState(message, urlHint) {
+    leaderboardEl.innerHTML = `<div class="state-box">${message}${urlHint ? `<code>${urlHint}</code>` : ''}</div>`;
+    statsBodyEl.innerHTML = '';
+  }
+
+  function renderLeaderboard(rows) {
+    leaderboardEl.innerHTML = rows.map(r => {
+      const isTop = Number(r.rank) === 1;
+      return `
+        <div class="board-row ${isTop ? 'top' : ''}">
+          <div class="rank">${r.rank}</div>
+          <div class="name">${r.player}</div>
+          <div class="score">${r.score}</div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderStats(rows) {
+    statsBodyEl.innerHTML = rows.map(r => {
+      let profitClass = 'profit-na';
+      if (r.profitable === 'Yes') profitClass = 'profit-yes';
+      else if (r.profitable === 'No') profitClass = 'profit-no';
+      return `
+        <tr>
+          <td>${r.player}</td>
+          <td class="num">${r.score}</td>
+          <td class="num">${r.weeks}</td>
+          <td class="num">${r.winPct === 'N/A' ? 'N/A' : r.winPct}</td>
+          <td class="num">${r.profit}</td>
+          <td class="${profitClass}">${r.profitable}</td>
+        </tr>`;
+    }).join('');
+  }
+
+  function parseSheetRows(data) {
+    // data is an array of arrays from PapaParse (no header mapping, since
+    // the Public tab has two side-by-side tables sharing one CSV export).
+    // Columns: A Rank, B Player, C Score | (D blank) | E Player, F Total Score,
+    // G Weeks, H Win %, I Profit, J Profitable, K Place
+    const leaderboard = [];
+    const stats = [];
+
+    data.slice(1).forEach(row => {
+      if (row[0] !== undefined && row[0] !== '' && row[1]) {
+        leaderboard.push({ rank: row[0], player: row[1], score: row[2] });
+      }
+      if (row[5] !== undefined && row[4]) {
+        stats.push({
+          player: row[4],
+          score: row[5],
+          weeks: row[6],
+          winPct: row[7],
+          profit: row[8],
+          profitable: row[9]
+        });
+      }
+    });
+
+    return { leaderboard, stats };
+  }
+
+  function load() {
+    if (!CSV_URL || CSV_URL.indexOf('PASTE_YOUR') !== -1) {
+      statusEl.textContent = 'Not connected yet';
+      showState(
+        'This page isn\u2019t pointed at your spreadsheet yet. Open index.html, find the CSV_URL line near the bottom, and paste in your Google Sheets "Publish to web" CSV link:',
+        'const CSV_URL = "https://docs.google.com/spreadsheets/d/e/.../pub?output=csv";'
+      );
+      return;
+    }
+
+    statusEl.textContent = 'Loading…';
+    const bustCache = CSV_URL + (CSV_URL.includes('?') ? '&' : '?') + 'cachebust=' + Date.now();
+
+    fetch(bustCache)
+      .then(res => {
+        if (!res.ok) throw new Error('Request failed: ' + res.status);
+        return res.text();
+      })
+      .then(text => {
+        const parsed = Papa.parse(text.trim());
+        const { leaderboard, stats } = parseSheetRows(parsed.data);
+
+        if (leaderboard.length === 0 && stats.length === 0) {
+          showState('Connected, but no rows came back. Double check the Public tab has data in it and is the tab selected in Publish to web.');
+          statusEl.textContent = 'No data found';
+          return;
+        }
+
+        renderLeaderboard(leaderboard);
+        renderStats(stats);
+        const now = new Date();
+        statusEl.textContent = 'Checked at ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      })
+      .catch(err => {
+        statusEl.textContent = 'Couldn\u2019t load data';
+        showState('Something went wrong fetching the spreadsheet. Make sure the sheet is published (File \u2192 Share \u2192 Publish to web) and the link below is pasted correctly into CSV_URL.', err.message);
+      });
+  }
+
+  refreshBtn.addEventListener('click', load);
+  load();
+</script>
+</body>
+</html>
