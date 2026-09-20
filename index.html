@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Hotdog League — Standings</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Hotdog League — Picks</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌭</text></svg>">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,10 +18,16 @@
     --chili: #C1442E;
     --muted: #8A7A66;
     --line: #E4D9C5;
+    --win: #3F7D4F;
+    --win-bg: #E7F3EA;
+    --loss: #C1442E;
+    --loss-bg: #FBEAE6;
+    --tie: #B98A1E;
+    --tie-bg: #FBF1DC;
   }
-
+ 
   * { box-sizing: border-box; }
-
+ 
   body {
     margin: 0;
     background: var(--bg);
@@ -29,17 +35,11 @@
     font-family: 'Work Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
   }
-
-  .wrap {
-    max-width: 640px;
-    margin: 0 auto;
-    padding: 40px 20px 80px;
-  }
-
-  header {
-    margin-bottom: 32px;
-  }
-
+ 
+  .wrap { max-width: 680px; margin: 0 auto; padding: 40px 20px 80px; }
+ 
+  header { margin-bottom: 24px; }
+ 
   h1 {
     font-family: 'Archivo Black', sans-serif;
     font-weight: 400;
@@ -48,15 +48,10 @@
     margin: 0 0 6px;
     letter-spacing: -0.01em;
   }
-
+ 
   h1 span { color: var(--chili); }
-
-  .subtitle {
-    color: var(--muted);
-    font-size: 0.95rem;
-    margin: 0;
-  }
-
+  .subtitle { color: var(--muted); font-size: 0.95rem; margin: 0; }
+ 
   .meta-row {
     display: flex;
     align-items: center;
@@ -65,9 +60,9 @@
     padding-top: 14px;
     border-top: 1px solid var(--line);
   }
-
+ 
   .meta-row span { color: var(--muted); font-size: 0.85rem; }
-
+ 
   #refresh-btn {
     background: none;
     border: 1px solid var(--line);
@@ -79,98 +74,73 @@
     cursor: pointer;
     transition: border-color 0.15s ease, background 0.15s ease;
   }
-
+ 
   #refresh-btn:hover { border-color: var(--chili); background: var(--surface); }
   #refresh-btn:active { transform: scale(0.97); }
-
-  section { margin-top: 36px; }
-
-  h2 {
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: var(--muted);
-    margin: 0 0 12px;
+ 
+  section { margin-top: 32px; }
+ 
+  h2 { font-size: 0.8rem; font-weight: 600; color: var(--muted); margin: 0 0 12px; }
+ 
+  .week-tabs {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    margin-bottom: 16px;
   }
-
-  /* Leaderboard */
-  .board-row {
-    display: grid;
-    grid-template-columns: 34px 1fr auto;
-    align-items: center;
-    gap: 14px;
-    padding: 12px 4px;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .board-row:first-child { border-top: 1px solid var(--line); }
-
-  .rank {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
+ 
+  .week-tab-btn {
+    flex: 0 0 auto;
     background: var(--surface);
     border: 1.5px solid var(--line);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 600;
-    font-size: 0.9rem;
-  }
-
-  .board-row.top .rank {
-    background: var(--mustard);
-    border-color: var(--mustard);
     color: var(--ink);
+    font-family: 'Work Sans', sans-serif;
+    font-weight: 600;
+    font-size: 0.85rem;
+    padding: 7px 14px;
+    border-radius: 100px;
+    cursor: pointer;
   }
-
-  .name { font-weight: 500; font-size: 1.02rem; }
-
-  .board-row.top .name { font-weight: 700; }
-
-  .score {
-    font-family: 'Archivo Black', sans-serif;
-    font-weight: 400;
-    font-size: 1.2rem;
-    color: var(--chili);
-  }
-
-  /* Stats table */
-  .table-scroll {
+ 
+  .week-tab-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; }
+ 
+  .picks-table-scroll {
     overflow-x: auto;
     border: 1px solid var(--line);
     border-radius: 10px;
-    background: var(--surface);
   }
-
-  table {
-    width: 100%;
-    border-collapse: collapse;
-    font-size: 0.88rem;
-    min-width: 560px;
-  }
-
-  th, td {
-    text-align: left;
-    padding: 10px 14px;
-    white-space: nowrap;
-  }
-
-  thead th {
-    color: var(--muted);
-    font-weight: 600;
-    font-size: 0.78rem;
-    border-bottom: 1px solid var(--line);
-  }
-
+ 
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  table.picks-table { min-width: 640px; }
+  th, td { text-align: left; padding: 10px 14px; white-space: nowrap; }
+  thead th { color: var(--muted); font-weight: 600; font-size: 0.78rem; border-bottom: 1px solid var(--line); }
   tbody tr:not(:last-child) td { border-bottom: 1px solid var(--line); }
-
   td.num, th.num { text-align: right; }
-
-  .profit-yes { color: #3F7D4F; font-weight: 600; }
-  .profit-no { color: var(--chili); font-weight: 600; }
-  .profit-na { color: var(--muted); }
-
-  /* States */
+  table.picks-table td.status-cell, table.picks-table th.status-cell { text-align: center; }
+ 
+  tr.result-win td { background: var(--win-bg); }
+  tr.result-loss td { background: var(--loss-bg); }
+  tr.result-tie td { background: var(--tie-bg); }
+ 
+  .pill {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+ 
+  .pill-win { background: var(--win); color: #fff; }
+  .pill-loss { background: var(--loss); color: #fff; }
+  .pill-tie { background: var(--tie); color: #fff; }
+  .pill-pending { background: var(--line); color: var(--muted); }
+ 
+  .pick-cell { color: var(--ink); }
+  .pick-empty { color: var(--muted); font-style: italic; }
+ 
   .state-box {
     padding: 28px 20px;
     text-align: center;
@@ -180,7 +150,7 @@
     font-size: 0.92rem;
     line-height: 1.5;
   }
-
+ 
   .state-box code {
     display: block;
     margin-top: 10px;
@@ -191,7 +161,7 @@
     word-break: break-all;
     color: var(--ink);
   }
-
+ 
   footer {
     margin-top: 48px;
     padding-top: 18px;
@@ -199,135 +169,186 @@
     color: var(--muted);
     font-size: 0.78rem;
   }
-
-  @media (max-width: 420px) {
-    .board-row { grid-template-columns: 28px 1fr auto; gap: 10px; }
-  }
 </style>
 </head>
 <body>
   <div class="wrap">
     <header>
       <h1>Hotdog <span>League</span></h1>
-      <p class="subtitle">2026 season — live standings</p>
+      <p class="subtitle">2026 season — weekly picks</p>
       <div class="meta-row">
         <span id="status-text">Loading…</span>
         <button id="refresh-btn">Refresh</button>
       </div>
     </header>
-
-    <section>
-      <h2>Leaderboard</h2>
-      <div id="leaderboard"></div>
+ 
+    <section style="margin-top:0;">
+      <h2>Weekly picks</h2>
+      <div id="week-tabs" class="week-tabs"></div>
+      <div id="picks-content"></div>
     </section>
-
-    <section>
-      <h2>Full stats</h2>
-      <div class="table-scroll">
-        <table id="stats-table">
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th class="num">Score</th>
-              <th class="num">Weeks</th>
-              <th class="num">Win %</th>
-              <th class="num">Profit</th>
-              <th>Profitable?</th>
-            </tr>
-          </thead>
-          <tbody id="stats-body"></tbody>
-        </table>
-      </div>
-    </section>
-
-    <footer>Pulls live from the league spreadsheet. Reload this page any time to see the latest scores.</footer>
+ 
+    <footer>Pulls live from the league spreadsheet. Reload this page any time to see the latest picks. A row is green when a player's score beats half their picks, red when it falls short, and yellow when it's an even split.</footer>
   </div>
-
+ 
 <script>
   // ---- CONFIG ----
   // Paste your "Publish to web" CSV link for the Public tab here:
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWsP99gn0o2jdtJgKc-Hpt4kMCjmVQmkm3s4o9CU6F5NqdzxtwUyTuf9Noi9ismMyNrhbNXncvs6Ma/pub?gid=2112926375&single=true&output=csv";
   // ----------------
-
-  const leaderboardEl = document.getElementById('leaderboard');
-  const statsBodyEl = document.getElementById('stats-body');
+ 
   const statusEl = document.getElementById('status-text');
   const refreshBtn = document.getElementById('refresh-btn');
-
+  const weekTabsEl = document.getElementById('week-tabs');
+  const picksContentEl = document.getElementById('picks-content');
+ 
+  let weeksData = [];
+  let activeWeek = null;
+ 
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+ 
   function showState(message, urlHint) {
-    leaderboardEl.innerHTML = `<div class="state-box">${message}${urlHint ? `<code>${urlHint}</code>` : ''}</div>`;
-    statsBodyEl.innerHTML = '';
+    weekTabsEl.innerHTML = '';
+    picksContentEl.innerHTML = `<div class="state-box">${message}${urlHint ? `<code>${urlHint}</code>` : ''}</div>`;
   }
-
-  function renderLeaderboard(rows) {
-    leaderboardEl.innerHTML = rows.map(r => {
-      const isTop = Number(r.rank) === 1;
-      return `
-        <div class="board-row ${isTop ? 'top' : ''}">
-          <div class="rank">${r.rank}</div>
-          <div class="name">${r.player}</div>
-          <div class="score">${r.score}</div>
-        </div>`;
-    }).join('');
-  }
-
-  function renderStats(rows) {
-    statsBodyEl.innerHTML = rows.map(r => {
-      let profitClass = 'profit-na';
-      if (r.profitable === 'Yes') profitClass = 'profit-yes';
-      else if (r.profitable === 'No') profitClass = 'profit-no';
-      return `
-        <tr>
-          <td>${r.player}</td>
-          <td class="num">${r.score}</td>
-          <td class="num">${r.weeks}</td>
-          <td class="num">${r.winPct === 'N/A' ? 'N/A' : r.winPct}</td>
-          <td class="num">${r.profit}</td>
-          <td class="${profitClass}">${r.profitable}</td>
-        </tr>`;
-    }).join('');
-  }
-
-  function parseSheetRows(data) {
-    // data is an array of arrays from PapaParse (no header mapping, since
-    // the Public tab has two side-by-side tables sharing one CSV export).
-    // Columns: A Rank, B Player, C Score | (D blank) | E Player, F Total Score,
-    // G Weeks, H Win %, I Profit, J Profitable, K Place
-    const leaderboard = [];
-    const stats = [];
-
-    data.slice(1).forEach(row => {
-      if (row[0] !== undefined && row[0] !== '' && row[1]) {
-        leaderboard.push({ rank: row[0], player: row[1], score: row[2] });
+ 
+  // Scans the whole sheet for rows shaped like "Week N, Favorite, Dawg, Under, Over, Score"
+  // followed by one row per player, until a blank row ends the block.
+  function parseWeeks(data) {
+    const weeks = [];
+    let i = 0;
+    while (i < data.length) {
+      const row = data[i];
+      const label = (row[0] || '').toString().trim();
+      if (/^week\s*\d+/i.test(label)) {
+        const weekName = label;
+        const headers = [row[1], row[2], row[3], row[4]].map(h => (h || '').toString().trim());
+        const players = [];
+        let j = i + 1;
+        while (j < data.length) {
+          const prow = data[j];
+          const pname = (prow[0] || '').toString().trim();
+          if (pname === '') break;
+          if (/^week\s*\d+/i.test(pname)) break;
+          const picks = [prow[1], prow[2], prow[3], prow[4]].map(v => (v || '').toString().trim());
+          const scoreRaw = (prow[5] || '').toString().trim();
+          players.push({ name: pname, picks, scoreRaw });
+          j++;
+        }
+        const hasAnyPick = players.some(p => p.picks.some(v => v !== ''));
+        if (hasAnyPick) {
+          weeks.push({ name: weekName, headers, players });
+        }
+        i = j;
+      } else {
+        i++;
       }
-      if (row[5] !== undefined && row[4]) {
-        stats.push({
-          player: row[4],
-          score: row[5],
-          weeks: row[6],
-          winPct: row[7],
-          profit: row[8],
-          profitable: row[9]
-        });
-      }
+    }
+    return weeks;
+  }
+ 
+  function resultForPlayer(p) {
+    const picksMade = p.picks.filter(v => v !== '').length;
+    if (picksMade === 0) return { status: 'none' };
+    const score = parseFloat(p.scoreRaw);
+    if (p.scoreRaw === '' || isNaN(score)) return { status: 'pending', picksMade };
+    const half = picksMade / 2;
+    if (score > half) return { status: 'win', picksMade, score };
+    if (score < half) return { status: 'loss', picksMade, score };
+    return { status: 'tie', picksMade, score };
+  }
+ 
+  function renderWeekTabs() {
+    weekTabsEl.innerHTML = weeksData.map(w => `
+      <button class="week-tab-btn ${w.name === activeWeek ? 'active' : ''}" data-week="${esc(w.name)}">${esc(w.name)}</button>
+    `).join('');
+    weekTabsEl.querySelectorAll('.week-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeWeek = btn.dataset.week;
+        renderWeekTabs();
+        renderPicksTable();
+      });
     });
-
-    return { leaderboard, stats };
   }
-
+ 
+  function renderPicksTable() {
+    const week = weeksData.find(w => w.name === activeWeek);
+    if (!week) {
+      picksContentEl.innerHTML = `<div class="state-box">No weeks with picks entered yet.</div>`;
+      return;
+    }
+    const colLabels = ['Favorite', 'Dawg', 'Under', 'Over'].map((def, idx) => week.headers[idx] || def);
+ 
+    const rows = week.players.map(p => {
+      const r = resultForPlayer(p);
+      let rowClass = '';
+      let pill = '';
+      if (r.status === 'win') { rowClass = 'result-win'; pill = '<span class="pill pill-win">Win</span>'; }
+      else if (r.status === 'loss') { rowClass = 'result-loss'; pill = '<span class="pill pill-loss">Loss</span>'; }
+      else if (r.status === 'tie') { rowClass = 'result-tie'; pill = '<span class="pill pill-tie">Tie</span>'; }
+      else if (r.status === 'pending') { pill = '<span class="pill pill-pending">Pending</span>'; }
+      else { pill = '<span class="pill pill-pending">No picks</span>'; }
+ 
+      const pickCells = p.picks.map(v => v
+        ? `<td class="pick-cell">${esc(v)}</td>`
+        : `<td class="pick-empty">—</td>`
+      ).join('');
+ 
+      return `<tr class="${rowClass}">
+        <td><strong>${esc(p.name)}</strong></td>
+        ${pickCells}
+        <td class="num">${p.scoreRaw !== '' ? esc(p.scoreRaw) : '—'}</td>
+        <td class="status-cell">${pill}</td>
+      </tr>`;
+    }).join('');
+ 
+    picksContentEl.innerHTML = `
+      <div class="picks-table-scroll">
+        <table class="picks-table">
+          <thead>
+            <tr>
+              <th>Player</th>
+              <th>${esc(colLabels[0])}</th>
+              <th>${esc(colLabels[1])}</th>
+              <th>${esc(colLabels[2])}</th>
+              <th>${esc(colLabels[3])}</th>
+              <th class="num">Score</th>
+              <th class="status-cell">Result</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>`;
+  }
+ 
+  function renderPicks() {
+    if (weeksData.length === 0) {
+      weekTabsEl.innerHTML = '';
+      picksContentEl.innerHTML = `<div class="state-box">No weeks with picks entered yet.</div>`;
+      return;
+    }
+    if (!activeWeek || !weeksData.some(w => w.name === activeWeek)) {
+      activeWeek = weeksData[weeksData.length - 1].name;
+    }
+    renderWeekTabs();
+    renderPicksTable();
+  }
+ 
   function load() {
     if (!CSV_URL || CSV_URL.indexOf('PASTE_YOUR') !== -1) {
       statusEl.textContent = 'Not connected yet';
       showState(
-        'This page isn\u2019t pointed at your spreadsheet yet. Open index.html, find the CSV_URL line near the bottom, and paste in your Google Sheets "Publish to web" CSV link:',
+        'This page isn\u2019t pointed at your spreadsheet yet. Open this file, find the CSV_URL line near the bottom, and paste in your Google Sheets "Publish to web" CSV link:',
         'const CSV_URL = "https://docs.google.com/spreadsheets/d/e/.../pub?output=csv";'
       );
       return;
     }
-
+ 
     statusEl.textContent = 'Loading…';
     const bustCache = CSV_URL + (CSV_URL.includes('?') ? '&' : '?') + 'cachebust=' + Date.now();
-
+ 
     fetch(bustCache)
       .then(res => {
         if (!res.ok) throw new Error('Request failed: ' + res.status);
@@ -335,16 +356,15 @@
       })
       .then(text => {
         const parsed = Papa.parse(text.trim());
-        const { leaderboard, stats } = parseSheetRows(parsed.data);
-
-        if (leaderboard.length === 0 && stats.length === 0) {
-          showState('Connected, but no rows came back. Double check the Public tab has data in it and is the tab selected in Publish to web.');
+        weeksData = parseWeeks(parsed.data);
+ 
+        if (weeksData.length === 0) {
+          showState('Connected, but no picks rows came back yet. Double check picks have been entered for at least one week.');
           statusEl.textContent = 'No data found';
           return;
         }
-
-        renderLeaderboard(leaderboard);
-        renderStats(stats);
+ 
+        renderPicks();
         const now = new Date();
         statusEl.textContent = 'Checked at ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       })
@@ -353,7 +373,7 @@
         showState('Something went wrong fetching the spreadsheet. Make sure the sheet is published (File \u2192 Share \u2192 Publish to web) and the link below is pasted correctly into CSV_URL.', err.message);
       });
   }
-
+ 
   refreshBtn.addEventListener('click', load);
   load();
 </script>
