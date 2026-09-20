@@ -307,8 +307,10 @@
 
 <script>
   // ---- CONFIG ----
-  // Paste your "Publish to web" CSV link for the Public tab here:
-  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWsP99gn0o2jdtJgKc-Hpt4kMCjmVQmkm3s4o9CU6F5NqdzxtwUyTuf9Noi9ismMyNrhbNXncvs6Ma/pub?output=csv";
+  // Total Score tab pulls from the "Public" tab of the sheet.
+  const SCORE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWsP99gn0o2jdtJgKc-Hpt4kMCjmVQmkm3s4o9CU6F5NqdzxtwUyTuf9Noi9ismMyNrhbNXncvs6Ma/pub?gid=2112926375&single=true&output=csv";
+  // Picks tab pulls from the main "Hotdog League" tab (has the Week blocks).
+  const PICKS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWsP99gn0o2jdtJgKc-Hpt4kMCjmVQmkm3s4o9CU6F5NqdzxtwUyTuf9Noi9ismMyNrhbNXncvs6Ma/pub?output=csv";
   // ----------------
 
   const leaderboardEl = document.getElementById('leaderboard');
@@ -520,31 +522,34 @@
     renderPicksTable();
   }
 
+  function fetchCsv(url) {
+    const bustCache = url + (url.includes('?') ? '&' : '?') + 'cachebust=' + Date.now();
+    return fetch(bustCache).then(res => {
+      if (!res.ok) throw new Error('Request failed: ' + res.status);
+      return res.text();
+    }).then(text => Papa.parse(text.trim()).data);
+  }
+
   function load() {
-    if (!CSV_URL || CSV_URL.indexOf('PASTE_YOUR') !== -1) {
+    if (!SCORE_CSV_URL || SCORE_CSV_URL.indexOf('PASTE_YOUR') !== -1 ||
+        !PICKS_CSV_URL || PICKS_CSV_URL.indexOf('PASTE_YOUR') !== -1) {
       statusEl.textContent = 'Not connected yet';
       showState(
-        'This page isn\u2019t pointed at your spreadsheet yet. Open this file, find the CSV_URL line near the bottom, and paste in your Google Sheets "Publish to web" CSV link:',
-        'const CSV_URL = "https://docs.google.com/spreadsheets/d/e/.../pub?output=csv";'
+        'This page isn\u2019t pointed at your spreadsheet yet. Open this file and set SCORE_CSV_URL / PICKS_CSV_URL near the bottom to your Google Sheets "Publish to web" CSV links:',
+        'const SCORE_CSV_URL = "...pub?gid=...&output=csv";\nconst PICKS_CSV_URL = "...pub?output=csv";'
       );
       return;
     }
 
     statusEl.textContent = 'Loading…';
-    const bustCache = CSV_URL + (CSV_URL.includes('?') ? '&' : '?') + 'cachebust=' + Date.now();
 
-    fetch(bustCache)
-      .then(res => {
-        if (!res.ok) throw new Error('Request failed: ' + res.status);
-        return res.text();
-      })
-      .then(text => {
-        const parsed = Papa.parse(text.trim());
-        const { leaderboard, stats } = parseSheetRows(parsed.data);
-        weeksData = parseWeeks(parsed.data);
+    Promise.all([fetchCsv(SCORE_CSV_URL), fetchCsv(PICKS_CSV_URL)])
+      .then(([scoreData, picksData]) => {
+        const { leaderboard, stats } = parseSheetRows(scoreData);
+        weeksData = parseWeeks(picksData);
 
         if (leaderboard.length === 0 && stats.length === 0 && weeksData.length === 0) {
-          showState('Connected, but no rows came back. Double check the Public tab has data in it and is the tab selected in Publish to web.');
+          showState('Connected, but no rows came back. Double check both tabs have data in them and are published (File \u2192 Share \u2192 Publish to web).');
           statusEl.textContent = 'No data found';
           return;
         }
@@ -557,7 +562,7 @@
       })
       .catch(err => {
         statusEl.textContent = 'Couldn\u2019t load data';
-        showState('Something went wrong fetching the spreadsheet. Make sure the sheet is published (File \u2192 Share \u2192 Publish to web) and the link below is pasted correctly into CSV_URL.', err.message);
+        showState('Something went wrong fetching the spreadsheet. Make sure both tabs are published (File \u2192 Share \u2192 Publish to web) and the SCORE_CSV_URL / PICKS_CSV_URL links are correct.', err.message);
       });
   }
 
