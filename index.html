@@ -270,22 +270,14 @@
 
     <div id="score-panel" class="main-panel active">
       <section style="margin-top:0;">
-        <h2>Leaderboard</h2>
-        <div id="leaderboard"></div>
-      </section>
-
-      <section>
-        <h2>Full stats</h2>
+        <h2>Total score</h2>
         <div class="table-scroll">
           <table id="stats-table">
             <thead>
               <tr>
                 <th>Player</th>
-                <th class="num">Score</th>
-                <th class="num">Weeks</th>
-                <th class="num">Win %</th>
-                <th class="num">Profit</th>
-                <th>Profitable?</th>
+                <th class="num">Total Score</th>
+                <th class="num">Weeks Played</th>
               </tr>
             </thead>
             <tbody id="stats-body"></tbody>
@@ -313,7 +305,7 @@
   const PICKS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWsP99gn0o2jdtJgKc-Hpt4kMCjmVQmkm3s4o9CU6F5NqdzxtwUyTuf9Noi9ismMyNrhbNXncvs6Ma/pub?output=csv";
   // ----------------
 
-  const leaderboardEl = document.getElementById('leaderboard');
+  const leaderboardEl = null;
   const statsBodyEl = document.getElementById('stats-body');
   const statusEl = document.getElementById('status-text');
   const refreshBtn = document.getElementById('refresh-btn');
@@ -338,66 +330,35 @@
   }
 
   function showState(message, urlHint) {
-    leaderboardEl.innerHTML = `<div class="state-box">${message}${urlHint ? `<code>${urlHint}</code>` : ''}</div>`;
-    statsBodyEl.innerHTML = '';
+    statsBodyEl.innerHTML = `<tr><td colspan="3"><div class="state-box">${message}${urlHint ? `<code>${urlHint}</code>` : ''}</div></td></tr>`;
     weekTabsEl.innerHTML = '';
     picksContentEl.innerHTML = `<div class="state-box">No picks data yet.</div>`;
   }
 
-  function renderLeaderboard(rows) {
-    leaderboardEl.innerHTML = rows.map(r => {
-      const isTop = Number(r.rank) === 1;
-      return `
-        <div class="board-row ${isTop ? 'top' : ''}">
-          <div class="rank">${r.rank}</div>
-          <div class="name">${r.player}</div>
-          <div class="score">${r.score}</div>
-        </div>`;
-    }).join('');
-  }
-
-  function renderStats(rows) {
-    statsBodyEl.innerHTML = rows.map(r => {
-      let profitClass = 'profit-na';
-      if (r.profitable === 'Yes') profitClass = 'profit-yes';
-      else if (r.profitable === 'No') profitClass = 'profit-no';
-      return `
-        <tr>
-          <td>${r.player}</td>
-          <td class="num">${r.score}</td>
-          <td class="num">${r.weeks}</td>
-          <td class="num">${r.winPct === 'N/A' ? 'N/A' : r.winPct}</td>
-          <td class="num">${r.profit}</td>
-          <td class="${profitClass}">${r.profitable}</td>
-        </tr>`;
-    }).join('');
+  function renderTotals(rows) {
+    statsBodyEl.innerHTML = rows.map(r => `
+      <tr>
+        <td>${esc(r.player)}</td>
+        <td class="num">${esc(r.totalScore)}</td>
+        <td class="num">${esc(r.weeksPlayed)}</td>
+      </tr>`).join('');
   }
 
   function parseSheetRows(data) {
-    // data is an array of arrays from PapaParse (no header mapping, since
-    // the Public tab has two side-by-side tables sharing one CSV export).
-    // Columns: A Rank, B Player, C Score | (D blank) | E Player, F Total Score,
-    // G Weeks, H Win %, I Profit, J Profitable, K Place
-    const leaderboard = [];
-    const stats = [];
-
-    data.slice(1).forEach(row => {
-      if (row[0] !== undefined && row[0] !== '' && row[1]) {
-        leaderboard.push({ rank: row[0], player: row[1], score: row[2] });
-      }
-      if (row[5] !== undefined && row[4]) {
-        stats.push({
-          player: row[4],
-          score: row[5],
-          weeks: row[6],
-          winPct: row[7],
-          profit: row[8],
-          profitable: row[9]
-        });
-      }
-    });
-
-    return { leaderboard, stats };
+    // Public tab: column A Player, B Total Score, C Weeks Played (plus
+    // other columns we don't need here). Stops at the first row that
+    // doesn't look like a real score row, in case of notes/blank lines below.
+    const totals = [];
+    for (let i = 1; i < data.length; i++) {
+      const row = data[i];
+      const player = (row[0] || '').toString().trim();
+      if (player === '' || /^player$/i.test(player)) continue;
+      const totalScore = (row[1] || '').toString().trim();
+      const weeksPlayed = (row[2] || '').toString().trim();
+      if (totalScore === '' || isNaN(parseFloat(totalScore))) break;
+      totals.push({ player, totalScore, weeksPlayed });
+    }
+    return totals;
   }
 
   // Scans the whole sheet for rows shaped like "Week N, Favorite, Dawg, Under, Over, Score"
@@ -545,17 +506,16 @@
 
     Promise.all([fetchCsv(SCORE_CSV_URL), fetchCsv(PICKS_CSV_URL)])
       .then(([scoreData, picksData]) => {
-        const { leaderboard, stats } = parseSheetRows(scoreData);
+        const totals = parseSheetRows(scoreData);
         weeksData = parseWeeks(picksData);
 
-        if (leaderboard.length === 0 && stats.length === 0 && weeksData.length === 0) {
+        if (totals.length === 0 && weeksData.length === 0) {
           showState('Connected, but no rows came back. Double check both tabs have data in them and are published (File \u2192 Share \u2192 Publish to web).');
           statusEl.textContent = 'No data found';
           return;
         }
 
-        renderLeaderboard(leaderboard);
-        renderStats(stats);
+        renderTotals(totals);
         renderPicks();
         const now = new Date();
         statusEl.textContent = 'Checked at ' + now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
