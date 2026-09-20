@@ -1,88 +1,3 @@
-Claude finished the response
-Created a file, ran a command, shared files
-
-Added a Total Score tab (leaderboard + full stats table) alongside Picks, both pulling from the same CSV_URL you'd pointed at the Public tab (I kept your edited link without the gid parameter).
-Index
-Code·HTML 
-
-Keep the picks tab on the website. Have total score pull from the public tab of the .csv
-Edited a file, ran a command, shared files
-
-Now the two tabs pull from separate sources: Total Score fetches the Public tab (gid=2112926375), and Picks fetches the main tab with the Week blocks (no gid). Both load in parallel on page load/refresh.
-Index
-Code·HTML 
-
-<!DOCTYPE html> <html lang="en"> <head> <meta charset="UTF-8"> <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"> <title>Hotdog League</title> <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text
-
-pasted
-
-the totals tab should only show me this:
-
-It looks like your message got cut off before you could show me what you want the Totals tab to display — no image or description came through after "this:".
-
-Could you paste in the details (or a screenshot) of exactly what you'd like the Total Score tab limited to? For example, do you just want the leaderboard (rank/player/score) and drop the "Full stats" table entirely, or something else?
-
-Player
-Total Score
-Weeks Played
-Collin
-1.5
-1
-Caleb
-2
-1
-Anthony
-3
-1
-Max
-3
-1
-Kevin
-1
-1
-Gavin
-2
-1
-Anna
-1
-1
-Evan
-1
-1
-Javarius
-2
-1
-Rory
-1
-1 This is it, pull this data from the excel sheet called: Public. Pull the picks tab(website) from Hotdog League (csv).
-Edited a file, ran 2 commands
-
-That test file is the picks tab, not the Public tab, so of course it picked up the Week blocks below row 10 — good to confirm the actual Public tab won't have that problem, but I'll still harden the parser to stop as soon as it hits a non-numeric score row, just in case:
-Edited a file, ran a command, shared files
-
-The Total Score tab now shows just a simple three-column table — Player, Total Score, Weeks Played — pulled from SCORE_CSV_URL (the Public tab). It also stops reading as soon as it hits a row without a valid score, so it won't accidentally pick up notes or extra content below the data. Picks still pulls from PICKS_CSV_URL (the Hotdog League tab) unchanged.
-Index
-Code·HTML 
-Hotdog_League_2026_fixed 2- Hotdog League.csv
-Hotdog_League_2026_fixed 2- Hotdo
-g League
-.csv
-CSV
-1789918762724_image.png
-
-the picks part works correctly, however the total score is not pulling properly. For total, it only needs to get the information from .csv tab hotdog league A2: G12. That is all that total needs to actually pull from.
-Ran a command
-
-That makes sense — the Total Score data was never on the separate "Public" tab pull, it's actually rows 2–12 of the same Hotdog League tab picks already load from. Let me simplify this to one CSV fetch and pull totals from that exact range.
-Ran 4 commands, edited a file, shared files
-
-Fixed — both tabs now pull from a single CSV_URL (the Hotdog League tab). Total Score reads exactly rows A2:G12 (the header row plus the 10 players' Player/Total Score/Weeks Played), and Picks still scans the Week blocks further down the same sheet. Verified both against your latest upload and the numbers match exactly.
-Index
-Code·HTML 
-
-
-Claude is AI and can make mistakes. Please double-check responses.
-Index · HTML
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -110,9 +25,9 @@ Index · HTML
     --tie: #B98A1E;
     --tie-bg: #FBF1DC;
   }
- 
+
   * { box-sizing: border-box; }
- 
+
   body {
     margin: 0;
     background: var(--bg);
@@ -120,11 +35,11 @@ Index · HTML
     font-family: 'Work Sans', sans-serif;
     -webkit-font-smoothing: antialiased;
   }
- 
+
   .wrap { max-width: 680px; margin: 0 auto; padding: 40px 20px 80px; }
- 
+
   header { margin-bottom: 24px; }
- 
+
   h1 {
     font-family: 'Archivo Black', sans-serif;
     font-weight: 400;
@@ -133,10 +48,10 @@ Index · HTML
     margin: 0 0 6px;
     letter-spacing: -0.01em;
   }
- 
+
   h1 span { color: var(--chili); }
   .subtitle { color: var(--muted); font-size: 0.95rem; margin: 0; }
- 
+
   .meta-row {
     display: flex;
     align-items: center;
@@ -145,9 +60,9 @@ Index · HTML
     padding-top: 14px;
     border-top: 1px solid var(--line);
   }
- 
+
   .meta-row span { color: var(--muted); font-size: 0.85rem; }
- 
+
   #refresh-btn {
     background: none;
     border: 1px solid var(--line);
@@ -159,10 +74,10 @@ Index · HTML
     cursor: pointer;
     transition: border-color 0.15s ease, background 0.15s ease;
   }
- 
+
   #refresh-btn:hover { border-color: var(--chili); background: var(--surface); }
   #refresh-btn:active { transform: scale(0.97); }
- 
+
   /* Main tabs */
   .main-tabs {
     display: flex;
@@ -170,7 +85,7 @@ Index · HTML
     margin-top: 28px;
     border-bottom: 1px solid var(--line);
   }
- 
+
   .main-tab-btn {
     background: none;
     border: none;
@@ -183,16 +98,16 @@ Index · HTML
     border-bottom: 2.5px solid transparent;
     margin-bottom: -1px;
   }
- 
+
   .main-tab-btn.active { color: var(--ink); border-bottom-color: var(--chili); }
- 
+
   .main-panel { display: none; }
   .main-panel.active { display: block; }
- 
+
   section { margin-top: 32px; }
- 
+
   h2 { font-size: 0.8rem; font-weight: 600; color: var(--muted); margin: 0 0 12px; }
- 
+
   /* Leaderboard */
   .board-row {
     display: grid;
@@ -202,9 +117,9 @@ Index · HTML
     padding: 12px 4px;
     border-bottom: 1px solid var(--line);
   }
- 
+
   .board-row:first-child { border-top: 1px solid var(--line); }
- 
+
   .rank {
     width: 30px;
     height: 30px;
@@ -217,19 +132,19 @@ Index · HTML
     font-weight: 600;
     font-size: 0.9rem;
   }
- 
+
   .board-row.top .rank { background: var(--mustard); border-color: var(--mustard); color: var(--ink); }
- 
+
   .name { font-weight: 500; font-size: 1.02rem; }
   .board-row.top .name { font-weight: 700; }
- 
+
   .score {
     font-family: 'Archivo Black', sans-serif;
     font-weight: 400;
     font-size: 1.2rem;
     color: var(--chili);
   }
- 
+
   /* Stats table */
   .table-scroll {
     overflow-x: auto;
@@ -237,7 +152,7 @@ Index · HTML
     border-radius: 10px;
     background: var(--surface);
   }
- 
+
   table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
   table.picks-table, #stats-table { min-width: 560px; }
   table.picks-table { min-width: 640px; }
@@ -246,11 +161,11 @@ Index · HTML
   tbody tr:not(:last-child) td { border-bottom: 1px solid var(--line); }
   td.num, th.num { text-align: right; }
   table.picks-table td.status-cell, table.picks-table th.status-cell { text-align: center; }
- 
+
   .profit-yes { color: #3F7D4F; font-weight: 600; }
   .profit-no { color: var(--chili); font-weight: 600; }
   .profit-na { color: var(--muted); }
- 
+
   /* Week sub-tabs (Picks) */
   .week-tabs {
     display: flex;
@@ -259,7 +174,7 @@ Index · HTML
     padding-bottom: 6px;
     margin-bottom: 16px;
   }
- 
+
   .week-tab-btn {
     flex: 0 0 auto;
     background: var(--surface);
@@ -272,19 +187,19 @@ Index · HTML
     border-radius: 100px;
     cursor: pointer;
   }
- 
+
   .week-tab-btn.active { background: var(--ink); border-color: var(--ink); color: #fff; }
- 
+
   .picks-table-scroll {
     overflow-x: auto;
     border: 1px solid var(--line);
     border-radius: 10px;
   }
- 
+
   tr.result-win td { background: var(--win-bg); }
   tr.result-loss td { background: var(--loss-bg); }
   tr.result-tie td { background: var(--tie-bg); }
- 
+
   .pill {
     display: inline-block;
     padding: 3px 10px;
@@ -294,15 +209,15 @@ Index · HTML
     letter-spacing: 0.02em;
     text-transform: uppercase;
   }
- 
+
   .pill-win { background: var(--win); color: #fff; }
   .pill-loss { background: var(--loss); color: #fff; }
   .pill-tie { background: var(--tie); color: #fff; }
   .pill-pending { background: var(--line); color: var(--muted); }
- 
+
   .pick-cell { color: var(--ink); }
   .pick-empty { color: var(--muted); font-style: italic; }
- 
+
   .state-box {
     padding: 28px 20px;
     text-align: center;
@@ -312,7 +227,7 @@ Index · HTML
     font-size: 0.92rem;
     line-height: 1.5;
   }
- 
+
   .state-box code {
     display: block;
     margin-top: 10px;
@@ -323,7 +238,7 @@ Index · HTML
     word-break: break-all;
     color: var(--ink);
   }
- 
+
   footer {
     margin-top: 48px;
     padding-top: 18px;
@@ -331,7 +246,7 @@ Index · HTML
     color: var(--muted);
     font-size: 0.78rem;
   }
- 
+
   @media (max-width: 420px) {
     .board-row { grid-template-columns: 28px 1fr auto; gap: 10px; }
   }
@@ -346,13 +261,13 @@ Index · HTML
         <span id="status-text">Loading…</span>
         <button id="refresh-btn">Refresh</button>
       </div>
- 
+
       <div class="main-tabs">
         <button class="main-tab-btn active" data-panel="score-panel">Total Score</button>
         <button class="main-tab-btn" data-panel="picks-panel">Picks</button>
       </div>
     </header>
- 
+
     <div id="score-panel" class="main-panel active">
       <section style="margin-top:0;">
         <h2>Total score</h2>
@@ -370,7 +285,7 @@ Index · HTML
         </div>
       </section>
     </div>
- 
+
     <div id="picks-panel" class="main-panel">
       <section style="margin-top:0;">
         <h2>Weekly picks</h2>
@@ -378,27 +293,27 @@ Index · HTML
         <div id="picks-content"></div>
       </section>
     </div>
- 
+
     <footer>Pulls live from the league spreadsheet. Reload this page any time to see the latest scores and picks. A picks row is green when a player's score beats half their picks, red when it falls short, and yellow when it's an even split.</footer>
   </div>
- 
+
 <script>
   // ---- CONFIG ----
   // Both tabs pull from the "Hotdog League" tab: totals from rows A2:G12,
   // picks from the Week blocks further down.
   const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWsP99gn0o2jdtJgKc-Hpt4kMCjmVQmkm3s4o9CU6F5NqdzxtwUyTuf9Noi9ismMyNrhbNXncvs6Ma/pub?output=csv";
   // ----------------
- 
+
   const leaderboardEl = null;
   const statsBodyEl = document.getElementById('stats-body');
   const statusEl = document.getElementById('status-text');
   const refreshBtn = document.getElementById('refresh-btn');
   const weekTabsEl = document.getElementById('week-tabs');
   const picksContentEl = document.getElementById('picks-content');
- 
+
   let weeksData = [];
   let activeWeek = null;
- 
+
   // ---- Main tab switching ----
   document.querySelectorAll('.main-tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -408,17 +323,17 @@ Index · HTML
       document.getElementById(btn.dataset.panel).classList.add('active');
     });
   });
- 
+
   function esc(s) {
     return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   }
- 
+
   function showState(message, urlHint) {
     statsBodyEl.innerHTML = `<tr><td colspan="3"><div class="state-box">${message}${urlHint ? `<code>${urlHint}</code>` : ''}</div></td></tr>`;
     weekTabsEl.innerHTML = '';
     picksContentEl.innerHTML = `<div class="state-box">No picks data yet.</div>`;
   }
- 
+
   function renderTotals(rows) {
     statsBodyEl.innerHTML = rows.map(r => `
       <tr>
@@ -427,7 +342,7 @@ Index · HTML
         <td class="num">${esc(r.weeksPlayed)}</td>
       </tr>`).join('');
   }
- 
+
   function parseSheetRows(data) {
     // "Hotdog League" tab, rows A2:G12: row 2 is the header (Player, Total
     // Score, Weeks Played, ...), rows 3-12 are the 10 players' totals.
@@ -445,7 +360,7 @@ Index · HTML
     }
     return totals;
   }
- 
+
   // Scans the whole sheet for rows shaped like "Week N, Favorite, Dawg, Under, Over, Score"
   // followed by one row per player, until a blank row ends the block.
   function parseWeeks(data) {
@@ -480,7 +395,7 @@ Index · HTML
     }
     return weeks;
   }
- 
+
   function resultForPlayer(p) {
     const picksMade = p.picks.filter(v => v !== '').length;
     if (picksMade === 0) return { status: 'none' };
@@ -491,7 +406,7 @@ Index · HTML
     if (score < half) return { status: 'loss', picksMade, score };
     return { status: 'tie', picksMade, score };
   }
- 
+
   function renderWeekTabs() {
     weekTabsEl.innerHTML = weeksData.map(w => `
       <button class="week-tab-btn ${w.name === activeWeek ? 'active' : ''}" data-week="${esc(w.name)}">${esc(w.name)}</button>
@@ -504,7 +419,7 @@ Index · HTML
       });
     });
   }
- 
+
   function renderPicksTable() {
     const week = weeksData.find(w => w.name === activeWeek);
     if (!week) {
@@ -512,7 +427,7 @@ Index · HTML
       return;
     }
     const colLabels = ['Favorite', 'Dawg', 'Under', 'Over'].map((def, idx) => week.headers[idx] || def);
- 
+
     const rows = week.players.map(p => {
       const r = resultForPlayer(p);
       let rowClass = '';
@@ -522,12 +437,12 @@ Index · HTML
       else if (r.status === 'tie') { rowClass = 'result-tie'; pill = '<span class="pill pill-tie">Tie</span>'; }
       else if (r.status === 'pending') { pill = '<span class="pill pill-pending">Pending</span>'; }
       else { pill = '<span class="pill pill-pending">No picks</span>'; }
- 
+
       const pickCells = p.picks.map(v => v
         ? `<td class="pick-cell">${esc(v)}</td>`
         : `<td class="pick-empty">—</td>`
       ).join('');
- 
+
       return `<tr class="${rowClass}">
         <td><strong>${esc(p.name)}</strong></td>
         ${pickCells}
@@ -535,7 +450,7 @@ Index · HTML
         <td class="status-cell">${pill}</td>
       </tr>`;
     }).join('');
- 
+
     picksContentEl.innerHTML = `
       <div class="picks-table-scroll">
         <table class="picks-table">
@@ -554,7 +469,7 @@ Index · HTML
         </table>
       </div>`;
   }
- 
+
   function renderPicks() {
     if (weeksData.length === 0) {
       weekTabsEl.innerHTML = '';
@@ -567,7 +482,7 @@ Index · HTML
     renderWeekTabs();
     renderPicksTable();
   }
- 
+
   function fetchCsv(url) {
     const bustCache = url + (url.includes('?') ? '&' : '?') + 'cachebust=' + Date.now();
     return fetch(bustCache).then(res => {
@@ -575,7 +490,7 @@ Index · HTML
       return res.text();
     }).then(text => Papa.parse(text.trim()).data);
   }
- 
+
   function load() {
     if (!CSV_URL || CSV_URL.indexOf('PASTE_YOUR') !== -1) {
       statusEl.textContent = 'Not connected yet';
@@ -585,20 +500,20 @@ Index · HTML
       );
       return;
     }
- 
+
     statusEl.textContent = 'Loading…';
- 
+
     fetchCsv(CSV_URL)
       .then(data => {
         const totals = parseSheetRows(data);
         weeksData = parseWeeks(data);
- 
+
         if (totals.length === 0 && weeksData.length === 0) {
           showState('Connected, but no rows came back. Double check the Hotdog League tab has data in it and is published (File \u2192 Share \u2192 Publish to web).');
           statusEl.textContent = 'No data found';
           return;
         }
- 
+
         renderTotals(totals);
         renderPicks();
         const now = new Date();
@@ -609,10 +524,9 @@ Index · HTML
         showState('Something went wrong fetching the spreadsheet. Make sure the sheet is published (File \u2192 Share \u2192 Publish to web) and the CSV_URL link is correct.', err.message);
       });
   }
- 
+
   refreshBtn.addEventListener('click', load);
   load();
 </script>
 </body>
 </html>
- 
