@@ -196,24 +196,11 @@
     border-radius: 10px;
   }
 
-  tr.result-win td { background: var(--win-bg); }
-  tr.result-loss td { background: var(--loss-bg); }
-  tr.result-tie td { background: var(--tie-bg); }
+  tr:not(:last-child) td { border-bottom: 1px solid var(--line); }
 
-  .pill {
-    display: inline-block;
-    padding: 3px 10px;
-    border-radius: 100px;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.02em;
-    text-transform: uppercase;
-  }
-
-  .pill-win { background: var(--win); color: #fff; }
-  .pill-loss { background: var(--loss); color: #fff; }
-  .pill-tie { background: var(--tie); color: #fff; }
-  .pill-pending { background: var(--line); color: var(--muted); }
+  .cell-win { background: var(--win-bg); }
+  .cell-loss { background: var(--loss-bg); }
+  .cell-tie { background: var(--tie-bg); }
 
   .pick-cell { color: var(--ink); }
   .pick-empty { color: var(--muted); font-style: italic; }
@@ -274,11 +261,7 @@
         <div class="table-scroll">
           <table id="stats-table">
             <thead>
-              <tr>
-                <th>Player</th>
-                <th class="num">Total Score</th>
-                <th class="num">Weeks Played</th>
-              </tr>
+              <tr id="stats-head"></tr>
             </thead>
             <tbody id="stats-body"></tbody>
           </table>
@@ -294,14 +277,16 @@
       </section>
     </div>
 
-    <footer>Pulls live from the league spreadsheet. Reload this page any time to see the latest scores and picks. A picks row is green when a player's score beats half their picks, red when it falls short, and yellow when it's an even split.</footer>
+    <footer>Pulls live from the league spreadsheet. Reload this page any time to see the latest scores and picks. Each pick cell is colored to match the spreadsheet: green for a win, red for a loss, yellow for a tie, no color if the game hasn't been marked yet.</footer>
   </div>
 
 <script>
   // ---- CONFIG ----
-  // Both tabs pull from the "Hotdog League" tab: totals from rows A2:G12,
-  // picks from the Week blocks further down.
-  const CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWsP99gn0o2jdtJgKc-Hpt4kMCjmVQmkm3s4o9CU6F5NqdzxtwUyTuf9Noi9ismMyNrhbNXncvs6Ma/pub?output=csv";
+  // Total Score reads cells A1:G11 of the "Public" tab (row 1 = headers,
+  // rows 2-11 = the 10 players), in the order they appear in the sheet.
+  const SCORE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWsP99gn0o2jdtJgKc-Hpt4kMCjmVQmkm3s4o9CU6F5NqdzxtwUyTuf9Noi9ismMyNrhbNXncvs6Ma/pub?gid=2112926375&single=true&output=csv";
+  // Picks read the "Hotdog League" tab's Week blocks.
+  const PICKS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vSWsP99gn0o2jdtJgKc-Hpt4kMCjmVQmkm3s4o9CU6F5NqdzxtwUyTuf9Noi9ismMyNrhbNXncvs6Ma/pub?output=csv";
   // ----------------
 
   const leaderboardEl = null;
@@ -329,36 +314,32 @@
   }
 
   function showState(message, urlHint) {
-    statsBodyEl.innerHTML = `<tr><td colspan="3"><div class="state-box">${message}${urlHint ? `<code>${urlHint}</code>` : ''}</div></td></tr>`;
+    document.getElementById('stats-head').innerHTML = '';
+    statsBodyEl.innerHTML = `<tr><td><div class="state-box">${message}${urlHint ? `<code>${urlHint}</code>` : ''}</div></td></tr>`;
     weekTabsEl.innerHTML = '';
     picksContentEl.innerHTML = `<div class="state-box">No picks data yet.</div>`;
   }
 
-  function renderTotals(rows) {
-    statsBodyEl.innerHTML = rows.map(r => `
-      <tr>
-        <td>${esc(r.player)}</td>
-        <td class="num">${esc(r.totalScore)}</td>
-        <td class="num">${esc(r.weeksPlayed)}</td>
-      </tr>`).join('');
+  function renderTotals(totals) {
+    const statsHeadEl = document.getElementById('stats-head');
+    statsHeadEl.innerHTML = totals.headers.map(h => `<th>${esc(h)}</th>`).join('');
+    statsBodyEl.innerHTML = totals.rows.map(row => `
+      <tr>${row.map(v => `<td>${esc(v)}</td>`).join('')}</tr>
+    `).join('');
   }
 
   function parseSheetRows(data) {
-    // "Hotdog League" tab, rows A2:G12: row 2 is the header (Player, Total
-    // Score, Weeks Played, ...), rows 3-12 are the 10 players' totals.
-    // In the 0-indexed array that's rows[1] (header, skipped) through rows[11].
-    const totals = [];
-    for (let i = 2; i <= 11 && i < data.length; i++) {
-      const row = data[i];
-      const player = (row[0] || '').toString().trim();
-      if (player === '') continue;
-      totals.push({
-        player,
-        totalScore: (row[1] || '').toString().trim(),
-        weeksPlayed: (row[2] || '').toString().trim()
-      });
+    // Public tab, cells A1:G11: row 1 is the header, rows 2-11 are the
+    // 10 players, columns A-G. Read whatever headers/values are actually
+    // there and keep the sheet's own row order.
+    const headers = (data[0] || []).slice(0, 7).map(h => (h || '').toString().trim());
+    const rows = [];
+    for (let i = 1; i <= 10 && i < data.length; i++) {
+      const row = (data[i] || []).slice(0, 7).map(v => (v || '').toString().trim());
+      if (row.every(v => v === '')) continue;
+      rows.push(row);
     }
-    return totals;
+    return { headers, rows };
   }
 
   // Scans the whole sheet for rows shaped like "Week N, Favorite, Dawg, Under, Over, Score"
@@ -396,15 +377,17 @@
     return weeks;
   }
 
-  function resultForPlayer(p) {
-    const picksMade = p.picks.filter(v => v !== '').length;
-    if (picksMade === 0) return { status: 'none' };
-    const score = parseFloat(p.scoreRaw);
-    if (p.scoreRaw === '' || isNaN(score)) return { status: 'pending', picksMade };
-    const half = picksMade / 2;
-    if (score > half) return { status: 'win', picksMade, score };
-    if (score < half) return { status: 'loss', picksMade, score };
-    return { status: 'tie', picksMade, score };
+  // A pick is marked with a trailing W/L/T (e.g. "Bills -1 W") to say how it
+  // graded out. That marker drives the cell color; it isn't shown as text.
+  function pickCellHtml(raw) {
+    const v = (raw || '').trim();
+    if (v === '') return `<td class="pick-empty">—</td>`;
+    const m = v.match(/^(.*?)\s+(w|win|l|loss|t|tie)$/i);
+    if (!m) return `<td class="pick-cell">${esc(v)}</td>`;
+    const text = m[1].trim();
+    const code = m[2][0].toLowerCase();
+    const cls = code === 'w' ? 'cell-win' : code === 'l' ? 'cell-loss' : 'cell-tie';
+    return `<td class="pick-cell ${cls}">${esc(text)}</td>`;
   }
 
   function renderWeekTabs() {
@@ -429,25 +412,11 @@
     const colLabels = ['Favorite', 'Dawg', 'Under', 'Over'].map((def, idx) => week.headers[idx] || def);
 
     const rows = week.players.map(p => {
-      const r = resultForPlayer(p);
-      let rowClass = '';
-      let pill = '';
-      if (r.status === 'win') { rowClass = 'result-win'; pill = '<span class="pill pill-win">Win</span>'; }
-      else if (r.status === 'loss') { rowClass = 'result-loss'; pill = '<span class="pill pill-loss">Loss</span>'; }
-      else if (r.status === 'tie') { rowClass = 'result-tie'; pill = '<span class="pill pill-tie">Tie</span>'; }
-      else if (r.status === 'pending') { pill = '<span class="pill pill-pending">Pending</span>'; }
-      else { pill = '<span class="pill pill-pending">No picks</span>'; }
-
-      const pickCells = p.picks.map(v => v
-        ? `<td class="pick-cell">${esc(v)}</td>`
-        : `<td class="pick-empty">—</td>`
-      ).join('');
-
-      return `<tr class="${rowClass}">
+      const pickCells = p.picks.map(pickCellHtml).join('');
+      return `<tr>
         <td><strong>${esc(p.name)}</strong></td>
         ${pickCells}
         <td class="num">${p.scoreRaw !== '' ? esc(p.scoreRaw) : '—'}</td>
-        <td class="status-cell">${pill}</td>
       </tr>`;
     }).join('');
 
@@ -462,7 +431,6 @@
               <th>${esc(colLabels[2])}</th>
               <th>${esc(colLabels[3])}</th>
               <th class="num">Score</th>
-              <th class="status-cell">Result</th>
             </tr>
           </thead>
           <tbody>${rows}</tbody>
@@ -492,24 +460,25 @@
   }
 
   function load() {
-    if (!CSV_URL || CSV_URL.indexOf('PASTE_YOUR') !== -1) {
+    if (!SCORE_CSV_URL || SCORE_CSV_URL.indexOf('PASTE_YOUR') !== -1 ||
+        !PICKS_CSV_URL || PICKS_CSV_URL.indexOf('PASTE_YOUR') !== -1) {
       statusEl.textContent = 'Not connected yet';
       showState(
-        'This page isn\u2019t pointed at your spreadsheet yet. Open this file and set CSV_URL near the bottom to your Google Sheets "Publish to web" CSV link for the Hotdog League tab:',
-        'const CSV_URL = "https://docs.google.com/spreadsheets/d/e/.../pub?output=csv";'
+        'This page isn\u2019t pointed at your spreadsheet yet. Open this file and set SCORE_CSV_URL / PICKS_CSV_URL near the bottom to your Google Sheets "Publish to web" CSV links:',
+        'const SCORE_CSV_URL = "...pub?gid=...&output=csv";\nconst PICKS_CSV_URL = "...pub?output=csv";'
       );
       return;
     }
 
     statusEl.textContent = 'Loading…';
 
-    fetchCsv(CSV_URL)
-      .then(data => {
-        const totals = parseSheetRows(data);
-        weeksData = parseWeeks(data);
+    Promise.all([fetchCsv(SCORE_CSV_URL), fetchCsv(PICKS_CSV_URL)])
+      .then(([scoreData, picksData]) => {
+        const totals = parseSheetRows(scoreData);
+        weeksData = parseWeeks(picksData);
 
-        if (totals.length === 0 && weeksData.length === 0) {
-          showState('Connected, but no rows came back. Double check the Hotdog League tab has data in it and is published (File \u2192 Share \u2192 Publish to web).');
+        if (totals.rows.length === 0 && weeksData.length === 0) {
+          showState('Connected, but no rows came back. Double check both tabs have data in them and are published (File \u2192 Share \u2192 Publish to web).');
           statusEl.textContent = 'No data found';
           return;
         }
@@ -521,7 +490,7 @@
       })
       .catch(err => {
         statusEl.textContent = 'Couldn\u2019t load data';
-        showState('Something went wrong fetching the spreadsheet. Make sure the sheet is published (File \u2192 Share \u2192 Publish to web) and the CSV_URL link is correct.', err.message);
+        showState('Something went wrong fetching the spreadsheet. Make sure both tabs are published (File \u2192 Share \u2192 Publish to web) and the SCORE_CSV_URL / PICKS_CSV_URL links are correct.', err.message);
       });
   }
 
