@@ -286,11 +286,9 @@
 
 <script>
   // ---- CONFIG ----
-  // Standings come from the "Public" tab (or any tab with a "Player / Total Score / Win % /
-  // Profit ($) / Profitable?" header row). Both links must be "Publish to web" CSV links:
-  // they end in output=csv. A link ending in /pubhtml returns a web page, not data.
-  const SCORE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRHHCq0GVrr8H5wkY8TAFbB54-J_J3njX-MF0CpMQpdGJ9fVCrYa_xfawrh--xbpGU54lQzNd89uhGS/pub?gid=1328152202&single=true&output=csv";
-  // Picks read the "Hotdog League" tab's Week blocks.
+  // Both read the "Hotdog League" tab (standings table at the top, Week blocks below).
+  // Links must be "Publish to web" CSV links: they end in output=csv, not /pubhtml.
+  const SCORE_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRHHCq0GVrr8H5wkY8TAFbB54-J_J3njX-MF0CpMQpdGJ9fVCrYa_xfawrh--xbpGU54lQzNd89uhGS/pub?gid=910932613&single=true&output=csv";
   const PICKS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRHHCq0GVrr8H5wkY8TAFbB54-J_J3njX-MF0CpMQpdGJ9fVCrYa_xfawrh--xbpGU54lQzNd89uhGS/pub?gid=910932613&single=true&output=csv";
   // ----------------
 
@@ -340,18 +338,23 @@
   }
 
   function parseStandings(data) {
-    // Find the header row (it may sit under a title row) by looking for Player + Total Score.
-    let headerIdx = -1;
+    // Find the header row (it may sit under a title row, or beside other tables) by looking
+    // for a "Player" column followed by a "Total Score" column.
+    let headerIdx = -1, scoreCol = -1, nameCol = -1;
     for (let i = 0; i < data.length; i++) {
       const cells = (data[i] || []).map(norm);
-      if (cells[0] === 'player' && cells.indexOf('totalscore') !== -1) { headerIdx = i; break; }
+      const sc = cells.indexOf('totalscore');
+      if (sc === -1) continue;
+      let nc = -1;
+      for (let k = 0; k < sc; k++) if (cells[k] === 'player') nc = k;
+      if (nc !== -1) { headerIdx = i; scoreCol = sc; nameCol = nc; break; }
     }
     if (headerIdx === -1) return [];
 
     const head = data[headerIdx].map(norm);
     const col = {
-      name: head.indexOf('player'),
-      score: head.indexOf('totalscore'),
+      name: nameCol,
+      score: scoreCol,
       win: head.findIndex(h => h.indexOf('win') === 0),
       profit: head.findIndex(h => h.indexOf('profit') === 0 && h.indexOf('profitable') !== 0),
       profitable: head.findIndex(h => h.indexOf('profitable') === 0)
